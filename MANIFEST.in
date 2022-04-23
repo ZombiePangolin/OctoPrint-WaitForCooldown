@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_waitforcooldown/templates *
+recursive-include octoprint_waitforcooldown/translations *
+recursive-include octoprint_waitforcooldown/static *
