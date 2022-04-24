@@ -3,13 +3,13 @@ layout: plugin
 
 id: waitforcooldown
 title: OctoPrint-WaitForCooldown
-description: Overrides the M109 & M190 commands in Octoprint to wait until cooldown temperature is met.
+description: Watches gcode for an @WAITFORCOOLDOWN, then waits until hotend temperature is cooled off to the set temperature before continuing.
 authors:
 - ZombiePangolin
 license: AGPLv3
 
 # TODO
-date: today's date in format YYYY-MM-DD, e.g. 2015-04-21
+date: 2022-04-24
 
 homepage: https://github.com/ZombiePangolin/OctoPrint-WaitForCooldown
 source: https://github.com/ZombiePangolin/OctoPrint-WaitForCooldown
@@ -21,26 +21,26 @@ archive: https://github.com/ZombiePangolin/OctoPrint-WaitForCooldown/archive/mas
 #follow_dependency_links: false
 
 # TODO
-tags:
-- a list
-- of tags
-- that apply
-- to your plugin
-- (take a look at the existing plugins for what makes sense here)
+#tags:
+#- a list
+#- of tags
+#- that apply
+#- to your plugin
+#- (take a look at the existing plugins for what makes sense here)
 
 # TODO
 # When registering a plugin on plugins.octoprint.org, all screenshots should be uploaded not linked from external sites.
-screenshots:
-- url: url of a screenshot, /assets/img/...
-  alt: alt-text of a screenshot
-  caption: caption of a screenshot
-- url: url of another screenshot, /assets/img/...
-  alt: alt-text of another screenshot
-  caption: caption of another screenshot
-- ...
+#screenshots:
+#- url: url of a screenshot, /assets/img/...
+#  alt: alt-text of a screenshot
+#  caption: caption of a screenshot
+#- url: url of another screenshot, /assets/img/...
+#  alt: alt-text of another screenshot
+#  caption: caption of another screenshot
+#- ...
 
 # TODO
-featuredimage: url of a featured image for your plugin, /assets/img/...
+#featuredimage: url of a featured image for your plugin, /assets/img/...
 
 # TODO
 # You only need the following if your plugin requires specific OctoPrint versions or
@@ -97,5 +97,5 @@ compatibility:
 
 ---
 
-**TODO**: Longer description of your plugin, configuration examples etc. This part will be visible on the page at
+#**TODO**: Longer description of your plugin, configuration examples etc. This part will be visible on the page at
 http://plugins.octoprint.org/plugin/waitforcooldown/
