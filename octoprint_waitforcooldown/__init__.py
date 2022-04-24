@@ -1,38 +1,67 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-### (Don't forget to remove me)
-# This is a basic skeleton for your plugin's __init__.py. You probably want to adjust the class name of your plugin
-# as well as the plugin mixins it's subclassing from. This is really just a basic skeleton to get you started,
-# defining your plugin as a template plugin, settings and asset plugin. Feel free to add or remove mixins
-# as necessary.
-#
-# Take a look at the documentation on what other plugin mixins are available.
-
 import octoprint.plugin
+from octoprint.events import Events
+import threading
+import time
 
-class WaitForCooldownPlugin(octoprint.plugin.SettingsPlugin,
-    octoprint.plugin.AssetPlugin,
-    octoprint.plugin.TemplatePlugin
-):
+class WaitForCooldownPlugin(octoprint.plugin.EventHandlerPlugin,
+                            octoprint.plugin.SettingsPlugin,
+                            octoprint.plugin.StartupPlugin,
+                            octoprint.plugin.TemplatePlugin):
+
+    ##~~ StartupPlugin mixin
+
+    def on_after_startup(self):
+        self._events = dict(cooldownevent=threading.Event())
+        self._logger.debug("Current command: {}".format(self._settings.get_boolean(["isenabled"])))
+
+    def _gcode_waitforcooldown(self):
+        targettemp=self._settings.get_int(["cooldowntemp"])
+        self._logger.debug("Waiting for hotend to reach {}\N{DEGREE SIGN}C".format(targettemp))
+
+        tool = self._printer._comm.getCurrentTool()
+        cmd = 'M104 T{} S0'.format(tool)
+        self._printer._comm._do_send(cmd, gcode='M104')
+        cmd = 'M117 Cooldown to {}C'.format(targettemp)
+        self._printer._comm._do_send(cmd, gcode='M117')
+ 
+        self._events['cooldownevent'].set()
+        while self._events['cooldownevent'].is_set():
+            heaters = self._printer.get_current_temperatures()
+            currenttemp = heaters['tool' + str(tool)]['actual']
+            self._logger.debug("Hotend {} current temperature: {}\N{DEGREE SIGN}C".format(tool, currenttemp))
+            if currenttemp <= targettemp:
+                break
+            time.sleep(3)
+
+    def hook_gcode_sending(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+        if self._settings.get_boolean(["isenabled"]) and cmd.strip() == "@WAITFORCOOLDOWN":
+            self._printer.set_job_on_hold(True, blocking=False)
+            self._gcode_waitforcooldown()
+            self._printer.set_job_on_hold(False)
+            return
+
+    ##~~ EventHandlerPlugin mixin
+
+    def on_event(self, event, payload):
+        if event in [Events.DISCONNECTING,
+                     Events.ERROR]:
+            for k, e in self._events.items():
+                if e.is_set():
+                    self._logger.debug("Aborting {}".format(k))
+                    e.clear()
 
     ##~~ SettingsPlugin mixin
 
     def get_settings_defaults(self):
-        return {
-            # put your plugin's default settings here
-        }
+        return dict(isenabled=True,
+                    cooldowntemp = 60,
+                    installed_version = self._plugin_version)
 
-    ##~~ AssetPlugin mixin
-
-    def get_assets(self):
-        # Define your plugin's asset files to automatically include in the
-        # core UI here.
-        return {
-            "js": ["js/waitforcooldown.js"],
-            "css": ["css/waitforcooldown.css"],
-            "less": ["less/waitforcooldown.less"]
-        }
+    def get_template_configs(self):
+        return [dict(type="settings", custom_bindings=False)]
 
     ##~~ Softwareupdate hook
 
@@ -60,7 +89,7 @@ class WaitForCooldownPlugin(octoprint.plugin.SettingsPlugin,
 # If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
 # can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-__plugin_name__ = "WaitForCooldown Plugin"
+__plugin_name__ = "Wait For Cooldown"
 
 
 # Set the Python version your plugin is compatible with below. Recommended is Python 3 only for all new plugins.
@@ -70,9 +99,10 @@ __plugin_pythoncompat__ = ">=3,<4"  # Only Python 3
 
 def __plugin_load__():
     global __plugin_implementation__
-    __plugin_implementation__ = WaitforcooldownPlugin()
+    __plugin_implementation__ = WaitForCooldownPlugin()
 
     global __plugin_hooks__
     __plugin_hooks__ = {
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.comm.protocol.gcode.sending": __plugin_implementation__.hook_gcode_sending
     }

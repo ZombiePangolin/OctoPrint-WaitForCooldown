@@ -1,0 +1,11 @@
+<h3>{{ _('Wait For Cooldown') }} <small>{{ _('Version') }}: <span data-bind="text: settings.plugins.waitforcooldown.installed_version"/></small></h3>
+<div class="control-group">
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="checked: settings.plugins.waitforcooldown.isenabled">Cooldown temperature to reach before shutdown
+		</label>
+	</div>
+	<div class="controls">
+		<input type="number" step="1" min="40" max="150" class="input-mini text-right" data-bind="enable: settings.plugins.waitforcooldown.isenabled, value: settings.plugins.waitforcooldown.cooldowntemp">
+	</div>
+</div>
